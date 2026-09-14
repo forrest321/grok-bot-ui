@@ -53,7 +53,7 @@ export class ChatOverlay
             'aria-live': 'polite',
         });
         this.emptyEl = h('p', { class: 'chat-empty' });
-        this.emptyEl.textContent = 'Click a bot in the HQ to start a thread.';
+        this.emptyEl.textContent = 'Talk to the Chief of Staff in the HQ.';
         this.logEl.append(this.emptyEl);
 
         const form = h('form', { class: 'chat-compose' });

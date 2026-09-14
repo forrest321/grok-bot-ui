@@ -1,5 +1,7 @@
 import Phaser, { Scene } from 'phaser';
-import { BOTS } from '../bots';
+import { ASLEEP_ICON, BOTS } from '../bots';
+
+const PLAYER_KEY = 'tiny_player';
 
 export class Preload extends Scene
 {
@@ -30,16 +32,43 @@ export class Preload extends Scene
             this.load.image(bot.talkKey, `kenney/characters/${bot.talkKey}.png`);
         }
 
+        const extraKeys = new Set<string>([PLAYER_KEY, ASLEEP_ICON]);
+
+        for (const bot of BOTS)
+        {
+            if (bot.busyIcon)
+            {
+                extraKeys.add(bot.busyIcon);
+            }
+        }
+
+        for (const key of extraKeys)
+        {
+            this.load.image(key, `kenney/characters/${key}.png`);
+        }
+
         this.load.audio('sfx-select', 'kenney/sfx/select_001.ogg');
         this.load.audio('sfx-hover', 'kenney/sfx/click1.ogg');
     }
 
     create ()
     {
+        const keys = new Set<string>([PLAYER_KEY, ASLEEP_ICON]);
+
         for (const bot of BOTS)
         {
-            this.textures.get(bot.idleKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
-            this.textures.get(bot.talkKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
+            keys.add(bot.idleKey);
+            keys.add(bot.talkKey);
+
+            if (bot.busyIcon)
+            {
+                keys.add(bot.busyIcon);
+            }
+        }
+
+        for (const key of keys)
+        {
+            this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
         }
 
         this.scene.start('HQ');
