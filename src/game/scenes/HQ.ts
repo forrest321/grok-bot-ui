@@ -21,13 +21,13 @@ type BotView = {
 };
 
 const SLOTS: { id: BotId; x: number; y: number }[] = [
-    { id: 'cos', x: 400, y: 385 },
-    { id: 'ops', x: 300, y: 345 },
-    { id: 'research', x: 520, y: 340 },
-    { id: 'build', x: 310, y: 430 },
+    { id: 'cos', x: 420, y: 420 },
+    { id: 'ops', x: 320, y: 400 },
+    { id: 'research', x: 560, y: 430 },
+    { id: 'build', x: 340, y: 470 },
 ];
 
-const PLAYER_START = { x: 455, y: 425 };
+const PLAYER_START = { x: 480, y: 450 };
 const PLAYER_SPEED = 140;
 const INTERACT_RANGE = 56;
 const BOB_PX = 6;
