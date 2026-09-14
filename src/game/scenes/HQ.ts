@@ -1,6 +1,7 @@
 import Phaser, { GameObjects, Scene } from 'phaser';
 import { ASLEEP_ICON, getBot, type BotId, type WorkerStatus } from '../bots';
 import { CHAT_CLOSED, uiBridge } from '../uiBridge';
+import { applyWorkerStatusChange, initWorkerTasks } from '../workerTasks';
 
 type BotView = {
     id: BotId;
@@ -60,12 +61,15 @@ export class HQ extends Scene
         this.placeBots();
         this.placePlayer();
         this.bindInput();
+        initWorkerTasks();
         this.input.setDefaultCursor('url(kenney/cursor/pointer_l.png) 6 2, pointer');
+        this.game.canvas.setAttribute('tabindex', '0');
 
         const onClosed = (): void =>
         {
             this.setSelected(null);
             this.setTypingCapture(false);
+            this.game.canvas.focus();
         };
         uiBridge.addEventListener(CHAT_CLOSED, onClosed);
         this.events.once('shutdown', () =>
@@ -136,17 +140,7 @@ export class HQ extends Scene
                 talkable: def.talkable,
             };
 
-            if (def.talkable)
-            {
-                bot.prompt = this.add.text(slot.x, slot.y - 52, 'E', {
-                    fontFamily: 'Arial, Helvetica, sans-serif',
-                    fontSize: '12px',
-                    color: '#fff3d0',
-                    stroke: '#1a1410',
-                    strokeThickness: 4,
-                }).setOrigin(0.5, 1).setVisible(false);
-            }
-            else
+            if (!def.talkable)
             {
                 const icon = this.add.image(slot.x, slot.y - STATUS_LIFT, def.busyIcon ?? ASLEEP_ICON);
                 icon.setOrigin(0.5, 0.5);
@@ -163,6 +157,14 @@ export class HQ extends Scene
 
                 this.applyWorkerStatus(bot);
             }
+
+            bot.prompt = this.add.text(slot.x, slot.y - 52, 'E', {
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '12px',
+                color: '#fff3d0',
+                stroke: '#1a1410',
+                strokeThickness: 4,
+            }).setOrigin(0.5, 1).setVisible(false);
 
             sprite.on('pointerover', () =>
             {
@@ -203,6 +205,7 @@ export class HQ extends Scene
         this.cursors = keyboard.createCursorKeys();
         this.wasd = keyboard.addKeys('W,A,S,D') as Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>;
         this.keyE = keyboard.addKey('E');
+        keyboard.addCapture('W,A,S,D,E,SPACE');
     }
 
     private startIdleBob (bot: BotView, index: number): void
@@ -290,11 +293,17 @@ export class HQ extends Scene
     {
         if (!bot.talkable)
         {
-            this.refuseWorker(bot);
+            this.inspectWorker(bot);
             return;
         }
 
         this.selectTalkable(bot.id);
+    }
+
+    private inspectWorker (bot: BotView): void
+    {
+        this.refuseWorker(bot);
+        uiBridge.inspectWorker(bot.id);
     }
 
     private selectTalkable (id: BotId): void
@@ -420,6 +429,7 @@ export class HQ extends Scene
 
             const index = WORKER_CYCLE.indexOf(def.status);
             def.status = WORKER_CYCLE[(index + 1) % WORKER_CYCLE.length];
+            applyWorkerStatusChange(def.id, def.status);
             this.applyWorkerStatus(bot);
         }
     }
@@ -457,7 +467,8 @@ export class HQ extends Scene
 
         if (bot.prompt)
         {
-            bot.prompt.setPosition(bot.restX, spriteY - 52);
+            const promptY = bot.statusIcon ? spriteY - STATUS_LIFT - 18 : spriteY - 52;
+            bot.prompt.setPosition(bot.restX, promptY);
             bot.prompt.setDepth(depth + 4);
         }
     }
@@ -514,18 +525,13 @@ export class HQ extends Scene
         }
     }
 
-    private nearestTalkableInRange (): BotView | null
+    private nearestBotInRange (): BotView | null
     {
         let best: BotView | null = null;
         let bestDist = INTERACT_RANGE;
 
         for (const bot of this.bots)
         {
-            if (!bot.talkable)
-            {
-                continue;
-            }
-
             const dist = Phaser.Math.Distance.Between(
                 this.player.x,
                 this.player.y,
@@ -545,7 +551,7 @@ export class HQ extends Scene
 
     private updateInteractPrompt (): void
     {
-        const near = this.typing ? null : this.nearestTalkableInRange();
+        const near = this.typing ? null : this.nearestBotInRange();
 
         for (const bot of this.bots)
         {
@@ -568,12 +574,20 @@ export class HQ extends Scene
             return;
         }
 
-        const target = this.nearestTalkableInRange();
+        const target = this.nearestBotInRange();
 
-        if (target)
+        if (!target)
+        {
+            return;
+        }
+
+        if (target.talkable)
         {
             this.selectTalkable(target.id);
+            return;
         }
+
+        this.inspectWorker(target);
     }
 
     private isChatInputFocused (): boolean

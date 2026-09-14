@@ -108,6 +108,13 @@ export class ChatOverlay
     {
         this.root.classList.remove('is-open');
         this.activeId = null;
+        this.inputEl.blur();
+
+        if (document.activeElement instanceof HTMLElement && this.root.contains(document.activeElement))
+        {
+            document.activeElement.blur();
+        }
+
         uiBridge.closeChat();
     }
 

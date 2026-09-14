@@ -37,6 +37,10 @@ body {
     cursor: url('kenney/cursor/pointer_l.png') 6 2, pointer;
 }
 
+#game-container canvas:focus {
+    outline: none;
+}
+
 #chat-root {
     position: absolute;
     top: 18px;
@@ -220,4 +224,131 @@ body {
 .chat-panel.is-minimized .chat-messages,
 .chat-panel.is-minimized .chat-compose {
     display: none;
+}
+
+#status-root {
+    position: absolute;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    z-index: 11;
+    width: 340px;
+    pointer-events: none;
+    display: none;
+}
+
+#status-root.is-open {
+    display: block;
+    pointer-events: auto;
+}
+
+.status-panel {
+    box-sizing: border-box;
+    padding: 2px 4px 6px;
+    color: var(--chat-ink);
+    font-family: var(--chat-font);
+    border: 22px solid transparent;
+    border-image-source: url('kenney/ui/panel_beige.png');
+    border-image-slice: 25 fill;
+    border-image-repeat: stretch;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #6b7c8a;
+    box-shadow: 0 0 0 2px rgba(42, 33, 24, 0.2);
+    flex: 0 0 auto;
+}
+
+.status-title {
+    flex: 1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--chat-ink);
+    line-height: 1.25;
+}
+
+.status-badge {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--chat-muted);
+}
+
+.status-badge[data-status="busy"] {
+    color: #9a3b2a;
+}
+
+.status-badge[data-status="asleep"] {
+    color: #4d5a86;
+}
+
+.status-badge[data-status="idle"] {
+    color: #4f6b3a;
+}
+
+.status-task {
+    margin: 8px 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.status-times {
+    display: flex;
+    gap: 28px;
+    margin: 0;
+}
+
+.status-times div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.status-times dt {
+    margin: 0;
+    color: var(--chat-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.status-times dd {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.status-meta,
+.status-hint {
+    margin: 8px 0 0;
+    color: var(--chat-muted);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.status-meta {
+    font-variant-numeric: tabular-nums;
+}
+
+.status-task[hidden],
+.status-times[hidden],
+.status-meta[hidden],
+.status-hint[hidden] {
+    display: none !important;
 }
