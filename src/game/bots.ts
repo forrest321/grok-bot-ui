@@ -12,23 +12,23 @@ export const BOTS: readonly BotDef[] = [
     {
         id: 'ops',
         name: 'Ops',
-        idleKey: 'blocky_ops_idle',
-        talkKey: 'blocky_ops_talk',
-        color: 0x3d7ea6,
+        idleKey: 'tiny_ops_idle',
+        talkKey: 'tiny_ops_talk',
+        color: 0x6b7c8a,
     },
     {
         id: 'research',
         name: 'Research',
-        idleKey: 'blocky_research_idle',
-        talkKey: 'blocky_research_talk',
-        color: 0x3d9a6a,
+        idleKey: 'tiny_research_idle',
+        talkKey: 'tiny_research_talk',
+        color: 0x7a4fb0,
     },
     {
         id: 'build',
         name: 'Build',
-        idleKey: 'blocky_build_idle',
-        talkKey: 'blocky_build_talk',
-        color: 0xc45c26,
+        idleKey: 'tiny_build_idle',
+        talkKey: 'tiny_build_talk',
+        color: 0xb84a3a,
     },
 ];
 

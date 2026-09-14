@@ -24,7 +24,7 @@ export class HQ extends Scene
 {
     private bots: BotView[] = [];
     private selectedId: BotId | null = null;
-    private readonly botScale = 0.42;
+    private readonly botScale = 1.15;
 
     constructor ()
     {
