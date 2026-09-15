@@ -12,11 +12,10 @@ export class Preload extends Scene
 
     init ()
     {
-        const bg = this.add.image(512, 384, 'hq-bg');
-        bg.setScale(Math.max(this.scale.width / bg.width, this.scale.height / bg.height));
+        this.add.rectangle(512, 384, 1024, 768, 0x1a1410);
 
-        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(2, 0x3b2a1a);
-        const bar = this.add.rectangle(282, 384, 4, 28, 0x3b2a1a);
+        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(2, 0xc4a574);
+        const bar = this.add.rectangle(282, 384, 4, 28, 0xc4a574);
 
         this.load.on('progress', (progress: number) =>
         {
@@ -26,6 +25,9 @@ export class Preload extends Scene
 
     preload ()
     {
+        this.load.image('tiny-dungeon', 'kenney/tiled/tilemap_packed.png');
+        this.load.tilemapTiledJSON('hq-map', 'kenney/tiled/hq.json');
+
         for (const bot of BOTS)
         {
             this.load.image(bot.idleKey, `kenney/characters/${bot.idleKey}.png`);
@@ -53,7 +55,7 @@ export class Preload extends Scene
 
     create ()
     {
-        const keys = new Set<string>([PLAYER_KEY, ASLEEP_ICON]);
+        const keys = new Set<string>([PLAYER_KEY, ASLEEP_ICON, 'tiny-dungeon']);
 
         for (const bot of BOTS)
         {

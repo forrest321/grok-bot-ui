@@ -20,16 +20,10 @@ type BotView = {
     prompt?: GameObjects.Text;
 };
 
-const SLOTS: { id: BotId; x: number; y: number }[] = [
-    { id: 'cos', x: 420, y: 408 },
-    { id: 'ops', x: 200, y: 348 },
-    { id: 'research', x: 760, y: 388 },
-    { id: 'build', x: 248, y: 496 },
-];
-
-const PLAYER_START = { x: 500, y: 448 };
 const PLAYER_SPEED = 140;
 const INTERACT_RANGE = 56;
+const BODY_HALF_W = 5;
+const BODY_HEIGHT = 8;
 const BOB_PX = 6;
 const SELECTED_BOB = 0.18;
 const ASLEEP_BOB = 0.4;
@@ -44,6 +38,10 @@ export class HQ extends Scene
     private bots: BotView[] = [];
     private selectedId: BotId | null = null;
     private readonly botScale = 1.0;
+    private map!: Phaser.Tilemaps.Tilemap;
+    private wallsLayer!: Phaser.Tilemaps.TilemapLayer;
+    private slots: { id: BotId; x: number; y: number }[] = [];
+    private playerStart = { x: 0, y: 0 };
     private player!: GameObjects.Image;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private wasd!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>;
@@ -57,7 +55,8 @@ export class HQ extends Scene
 
     create ()
     {
-        this.placeBackground();
+        this.placeTilemap();
+        this.readSpawns();
         this.placeBots();
         this.placePlayer();
         this.bindInput();
@@ -99,17 +98,85 @@ export class HQ extends Scene
         this.player.setDepth(this.player.y);
     }
 
-    private placeBackground (): void
+    private placeTilemap (): void
     {
-        const bg = this.add.image(512, 384, 'hq-bg');
-        const cover = Math.max(this.scale.width / bg.width, this.scale.height / bg.height);
-        bg.setScale(cover);
-        bg.setDepth(-1000);
+        this.map = this.make.tilemap({ key: 'hq-map' });
+        const tileset = this.map.addTilesetImage('tiny-dungeon', 'tiny-dungeon', 16, 16, 0, 0);
+
+        if (!tileset)
+        {
+            throw new Error('tiny-dungeon tileset missing');
+        }
+
+        this.add.rectangle(
+            this.map.widthInPixels / 2,
+            this.map.heightInPixels / 2,
+            this.map.widthInPixels,
+            this.map.heightInPixels,
+            0xecad7b,
+        ).setDepth(-2000);
+
+        const ground = this.map.createLayer('ground', tileset, 0, 0);
+        const walls = this.map.createLayer('walls', tileset, 0, 0);
+        const props = this.map.createLayer('props', tileset, 0, 0);
+
+        if (!ground || !walls || !props)
+        {
+            throw new Error('HQ tile layers missing');
+        }
+
+        ground.setDepth(-20);
+        walls.setDepth(-10);
+        props.setDepth(-5);
+        this.wallsLayer = walls as Phaser.Tilemaps.TilemapLayer;
+
+        this.cameras.main.setZoom(2);
+        this.cameras.main.roundPixels = true;
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+        this.cameras.main.centerOn(this.map.widthInPixels / 2, this.map.heightInPixels / 2);
+    }
+
+    /**
+     * Spawn objects are Tiled point objects on layer `spawns`.
+     * x/y are map pixels; sprites use origin (0.5, 1) so the point is the feet.
+     */
+    private readSpawns (): void
+    {
+        const layer = this.map.getObjectLayer('spawns');
+
+        if (!layer)
+        {
+            throw new Error('Missing spawns object layer');
+        }
+
+        const byName = new Map(layer.objects.map((obj) => [obj.name, obj]));
+        const ids: BotId[] = ['cos', 'ops', 'research', 'build'];
+
+        this.slots = ids.map((id) =>
+        {
+            const obj = byName.get(id);
+
+            if (obj?.x === undefined || obj.y === undefined)
+            {
+                throw new Error(`Missing spawn: ${id}`);
+            }
+
+            return { id, x: obj.x, y: obj.y };
+        });
+
+        const player = byName.get('player');
+
+        if (player?.x === undefined || player.y === undefined)
+        {
+            throw new Error('Missing spawn: player');
+        }
+
+        this.playerStart = { x: player.x, y: player.y };
     }
 
     private placeBots (): void
     {
-        SLOTS.forEach((slot, index) =>
+        this.slots.forEach((slot, index) =>
         {
             const def = getBot(slot.id);
             const marker = this.add.ellipse(slot.x, slot.y - 4, 36, 12, def.color, 0.34);
@@ -188,9 +255,9 @@ export class HQ extends Scene
 
     private placePlayer (): void
     {
-        this.player = this.add.image(PLAYER_START.x, PLAYER_START.y, 'tiny_player');
+        this.player = this.add.image(this.playerStart.x, this.playerStart.y, 'tiny_player');
         this.player.setOrigin(0.5, 1);
-        this.player.setDepth(PLAYER_START.y);
+        this.player.setDepth(this.playerStart.y);
     }
 
     private bindInput (): void
@@ -510,10 +577,18 @@ export class HQ extends Scene
 
         const length = Math.hypot(vx, vy);
         const step = PLAYER_SPEED * (delta / 1000);
-        this.player.x += (vx / length) * step;
-        this.player.y += (vy / length) * step;
-        this.player.x = Phaser.Math.Clamp(this.player.x, 16, 1008);
-        this.player.y = Phaser.Math.Clamp(this.player.y, 24, 768);
+        const nextX = this.player.x + (vx / length) * step;
+        const nextY = this.player.y + (vy / length) * step;
+
+        if (!this.blockedAt(nextX, this.player.y))
+        {
+            this.player.x = nextX;
+        }
+
+        if (!this.blockedAt(this.player.x, nextY))
+        {
+            this.player.y = nextY;
+        }
 
         if (vx < 0)
         {
@@ -523,6 +598,33 @@ export class HQ extends Scene
         {
             this.player.setFlipX(false);
         }
+    }
+
+    private blockedAt (x: number, y: number): boolean
+    {
+        const points: Array<[number, number]> = [
+            [x - BODY_HALF_W, y - 1],
+            [x + BODY_HALF_W, y - 1],
+            [x - BODY_HALF_W, y - BODY_HEIGHT],
+            [x + BODY_HALF_W, y - BODY_HEIGHT],
+        ];
+
+        for (const [px, py] of points)
+        {
+            if (px < 0 || py < 0 || px >= this.map.widthInPixels || py >= this.map.heightInPixels)
+            {
+                return true;
+            }
+
+            const tile = this.wallsLayer.getTileAtWorldXY(px, py);
+
+            if (tile && tile.index > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private nearestBotInRange (): BotView | null

@@ -1,4 +1,4 @@
-import Phaser, { Scene } from 'phaser';
+import { Scene } from 'phaser';
 
 export class Boot extends Scene
 {
@@ -7,14 +7,8 @@ export class Boot extends Scene
         super('Boot');
     }
 
-    preload ()
-    {
-        this.load.image('hq-bg', 'kenney/room/hq-bg.png');
-    }
-
     create ()
     {
-        this.textures.get('hq-bg').setFilter(Phaser.Textures.FilterMode.NEAREST);
         this.scene.start('Preload');
     }
 }
