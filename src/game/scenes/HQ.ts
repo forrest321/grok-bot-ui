@@ -26,12 +26,19 @@ const PLAYER_SPEED = 140;
 const INTERACT_RANGE = 56;
 const BODY_HALF_W = 5;
 const BODY_HEIGHT = 8;
-const BOB_PX = 6;
+const BOB_PX = 3;
 const SELECTED_BOB = 0.18;
 const ASLEEP_BOB = 0.4;
-const SPRITE_H = 48;
-const NAMEPLATE_GAP = 3;
-const STATUS_ICON_SCALE = 0.42;
+/** 48×48 NEAREST export × 0.5 = 24px ≈ 1.5 tiles in the 16px world. */
+const CHAR_SCALE = 0.5;
+const SPRITE_SRC = 48;
+const SPRITE_H = SPRITE_SRC * CHAR_SCALE;
+const NAMEPLATE_GAP = 2;
+const STATUS_ICON_SCALE = 0.3;
+const STATUS_SIDE = 10;
+const MARKER_W = 18;
+const MARKER_H = 6;
+const MARKER_LIFT = 2;
 const MARKER_STROKE = 0xfff3d0;
 const ASLEEP_TINT = 0x666688;
 const STATUS_CYCLE_MS = 8000;
@@ -50,7 +57,7 @@ export class HQ extends Scene
     private bots: BotView[] = [];
     private selectedId: BotId | null = null;
     private inspectedId: BotId | null = null;
-    private readonly botScale = 1.0;
+    private readonly botScale = CHAR_SCALE;
     private map!: Phaser.Tilemaps.Tilemap;
     private wallsLayer!: Phaser.Tilemaps.TilemapLayer;
     private slots: { id: BotId; x: number; y: number }[] = [];
@@ -192,7 +199,7 @@ export class HQ extends Scene
         this.slots.forEach((slot, index) =>
         {
             const def = getBot(slot.id);
-            const marker = this.add.ellipse(slot.x, slot.y - 4, 36, 12, def.color, 0.34);
+            const marker = this.add.ellipse(slot.x, slot.y - MARKER_LIFT, MARKER_W, MARKER_H, def.color, 0.34);
             const sprite = this.add.image(slot.x, slot.y, def.idleKey);
             sprite.setOrigin(0.5, 1);
             sprite.setScale(this.botScale);
@@ -201,7 +208,7 @@ export class HQ extends Scene
             const nameLabel = this.add.text(slot.x, slot.y - SPRITE_H - NAMEPLATE_GAP, def.shortName, NAMEPLATE_STYLE)
                 .setOrigin(0.5, 1)
                 .setResolution(2)
-                .setPadding(2);
+                .setPadding(1);
 
             const bot: BotView = {
                 id: def.id,
@@ -219,24 +226,24 @@ export class HQ extends Scene
 
             if (!def.talkable)
             {
-                const icon = this.add.image(slot.x - 16, slot.y - SPRITE_H - NAMEPLATE_GAP, def.busyIcon ?? ASLEEP_ICON);
+                const icon = this.add.image(slot.x - STATUS_SIDE, slot.y - SPRITE_H - NAMEPLATE_GAP, def.busyIcon ?? ASLEEP_ICON);
                 icon.setOrigin(0.5, 1);
                 icon.setScale(STATUS_ICON_SCALE);
                 bot.statusIcon = icon;
 
-                bot.zzz = this.add.text(slot.x + 16, slot.y - SPRITE_H - NAMEPLATE_GAP, 'Zzz', {
+                bot.zzz = this.add.text(slot.x + STATUS_SIDE, slot.y - SPRITE_H - NAMEPLATE_GAP, 'Zzz', {
                     ...NAMEPLATE_STYLE,
                     fontSize: '8px',
                     color: '#c8d4ee',
                 }).setOrigin(0, 1).setResolution(2).setVisible(false);
 
-                bot.busyDots = this.add.text(slot.x + 16, slot.y - SPRITE_H - NAMEPLATE_GAP, '…', {
+                bot.busyDots = this.add.text(slot.x + STATUS_SIDE, slot.y - SPRITE_H - NAMEPLATE_GAP, '…', {
                     ...NAMEPLATE_STYLE,
                     fontSize: '10px',
                     color: '#fff3d0',
                 }).setOrigin(0, 1).setResolution(2).setVisible(false);
 
-                bot.nudge = this.add.text(slot.x, slot.y - SPRITE_H - NAMEPLATE_GAP - 10, '!', {
+                bot.nudge = this.add.text(slot.x, slot.y - SPRITE_H - NAMEPLATE_GAP - 8, '!', {
                     ...NAMEPLATE_STYLE,
                     fontSize: '10px',
                     color: '#ffd36a',
@@ -245,7 +252,7 @@ export class HQ extends Scene
                 this.applyWorkerStatus(bot);
             }
 
-            bot.prompt = this.add.text(slot.x, slot.y - SPRITE_H - NAMEPLATE_GAP - 12, 'E', {
+            bot.prompt = this.add.text(slot.x, slot.y - SPRITE_H - NAMEPLATE_GAP - 9, 'E', {
                 ...NAMEPLATE_STYLE,
                 fontSize: '10px',
                 color: '#fff3d0',
@@ -277,6 +284,7 @@ export class HQ extends Scene
     {
         this.player = this.add.image(this.playerStart.x, this.playerStart.y, 'tiny_player');
         this.player.setOrigin(0.5, 1);
+        this.player.setScale(this.botScale);
         this.player.setDepth(this.playerStart.y);
     }
 
@@ -325,7 +333,7 @@ export class HQ extends Scene
 
         this.tweens.add({
             targets: motion,
-            offset: 5,
+            offset: 3,
             duration: 720 + index * 90,
             delay: index * 140,
             yoyo: true,
@@ -423,7 +431,7 @@ export class HQ extends Scene
 
         this.tweens.add({
             targets: bot,
-            shakeX: 4,
+            shakeX: 2,
             duration: 45,
             yoyo: true,
             repeat: 3,
@@ -486,7 +494,7 @@ export class HQ extends Scene
 
         bot.marker.setFillStyle(def.color, lit ? 0.9 : hovered ? 0.62 : 0.34);
         bot.marker.setStrokeStyle(
-            lit ? 4 : hovered ? 2 : 0,
+            lit ? 2 : hovered ? 1 : 0,
             MARKER_STROKE,
             lit ? 0.95 : hovered ? 0.8 : 0,
         );
@@ -559,9 +567,9 @@ export class HQ extends Scene
 
         bot.sprite.x = bot.restX + bot.shakeX;
         bot.sprite.y = spriteY;
-        bot.marker.setPosition(bot.restX, bot.restY - 4);
+        bot.marker.setPosition(bot.restX, bot.restY - MARKER_LIFT);
 
-        const plateY = spriteY - SPRITE_H - NAMEPLATE_GAP;
+        const plateY = spriteY - bot.sprite.displayHeight - NAMEPLATE_GAP;
         const iconBob = bot.statusIcon?.visible ? bot.statusBobOffset * 0.35 : 0;
         bot.nameLabel.setPosition(bot.restX, plateY);
 
@@ -572,31 +580,31 @@ export class HQ extends Scene
 
         if (bot.statusIcon)
         {
-            bot.statusIcon.setPosition(bot.restX - 16 + bot.shakeX, plateY - iconBob);
+            bot.statusIcon.setPosition(bot.restX - STATUS_SIDE + bot.shakeX, plateY - iconBob);
             bot.statusIcon.setDepth(depth + 1);
         }
 
         if (bot.zzz)
         {
-            bot.zzz.setPosition(bot.restX + 14, plateY);
+            bot.zzz.setPosition(bot.restX + STATUS_SIDE - 2, plateY);
             bot.zzz.setDepth(depth + 2);
         }
 
         if (bot.busyDots)
         {
-            bot.busyDots.setPosition(bot.restX + 14, plateY);
+            bot.busyDots.setPosition(bot.restX + STATUS_SIDE - 2, plateY);
             bot.busyDots.setDepth(depth + 2);
         }
 
         if (bot.nudge)
         {
-            bot.nudge.setPosition(bot.restX, plateY - 11);
+            bot.nudge.setPosition(bot.restX, plateY - 8);
             bot.nudge.setDepth(depth + 4);
         }
 
         if (bot.prompt)
         {
-            bot.prompt.setPosition(bot.restX, plateY - 12);
+            bot.prompt.setPosition(bot.restX, plateY - 9);
             bot.prompt.setDepth(depth + 5);
         }
     }

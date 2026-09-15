@@ -18,8 +18,9 @@ Talk pose = idle except CoS (knight visor → open helm).
 - Layers: `ground` (floor), `walls` (collidable), `props` (non-colliding decor), object layer `spawns`.
 - Spawn points (`spawns`): named Tiled **point** objects `cos`, `foss`, `randy`, `redax`, `photo`, `player`. Coordinates are **map pixels**; HQ sprites use origin `(0.5, 1)`, so each point is the feet position (bottom-center of a walkable floor tile).
 - Author via `python3 scripts/generate-hq-map.py` (also exports 48×48 NEAREST bot sprites). Do not use the Kenney `sampleMap.tmx` as the HQ. Do not revert to baked `hq-bg.png`.
+- Display: `CHAR_SCALE` / `botScale` **0.5** in `HQ.ts` (24 world px ≈ 1.5 tiles). Camera zoom 2 maps 48×48 textures 1:1 to screen pixels. Keep NEAREST. Do not grow the map to fit oversized sprites.
 
-## Bot sprites (Kenney 0-indexed tile → 48×48 NEAREST)
+## Bot sprites (Kenney 0-indexed tile → 48×48 NEAREST, drawn at 0.5)
 
 | id | short | full | tile idle / talk | talkable | file prefix |
 |----|-------|------|------------------|----------|-------------|

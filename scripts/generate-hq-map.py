@@ -47,7 +47,8 @@ ANVIL = 65
 TABLE = 73
 STOOL = 74
 
-# Kenney 0-indexed character tiles → 48×48 NEAREST sprites
+# Kenney 0-indexed character tiles → 48×48 NEAREST sprites.
+# HQ.ts draws them at CHAR_SCALE 0.5 (24px ≈ 1.5 tiles; zoom 2 is 1:1 texels).
 # idle, talk (talk may reuse idle when the pack has no pose)
 BOT_TILES = {
     "cos": (96, 97),
