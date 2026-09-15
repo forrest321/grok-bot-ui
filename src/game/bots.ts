@@ -1,10 +1,11 @@
-export type BotId = 'cos' | 'ops' | 'research' | 'build';
+export type BotId = 'cos' | 'foss' | 'randy' | 'redax' | 'photo';
 
 export type WorkerStatus = 'idle' | 'busy' | 'asleep';
 
 export type BotDef = {
     id: BotId;
     name: string;
+    shortName: string;
     idleKey: string;
     talkKey: string;
     color: number;
@@ -20,40 +21,55 @@ export const BOTS: BotDef[] = [
     {
         id: 'cos',
         name: 'Chief of Staff',
+        shortName: 'CoS',
         idleKey: 'tiny_cos_idle',
         talkKey: 'tiny_cos_talk',
         color: 0x3d5a80,
         talkable: true,
     },
     {
-        id: 'ops',
-        name: 'Ops',
-        idleKey: 'tiny_ops_idle',
-        talkKey: 'tiny_ops_talk',
-        color: 0x6b7c8a,
-        talkable: false,
-        status: 'busy',
-        busyIcon: 'tiny_status_shield',
-    },
-    {
-        id: 'research',
-        name: 'Research',
-        idleKey: 'tiny_research_idle',
-        talkKey: 'tiny_research_talk',
+        id: 'foss',
+        name: 'Foss',
+        shortName: 'Foss',
+        idleKey: 'tiny_foss_idle',
+        talkKey: 'tiny_foss_talk',
         color: 0x7a4fb0,
         talkable: false,
-        status: 'asleep',
+        status: 'busy',
         busyIcon: 'tiny_status_potion',
     },
     {
-        id: 'build',
-        name: 'Build',
-        idleKey: 'tiny_build_idle',
-        talkKey: 'tiny_build_talk',
+        id: 'randy',
+        name: 'Randy',
+        shortName: 'Randy',
+        idleKey: 'tiny_randy_idle',
+        talkKey: 'tiny_randy_talk',
+        color: 0x6b7c8a,
+        talkable: false,
+        status: 'idle',
+        busyIcon: 'tiny_status_shield',
+    },
+    {
+        id: 'redax',
+        name: 'Redax',
+        shortName: 'Redax',
+        idleKey: 'tiny_redax_idle',
+        talkKey: 'tiny_redax_talk',
         color: 0xb84a3a,
         talkable: false,
         status: 'busy',
         busyIcon: 'tiny_status_hammer',
+    },
+    {
+        id: 'photo',
+        name: 'Photo Desk',
+        shortName: 'Photo',
+        idleKey: 'tiny_photo_idle',
+        talkKey: 'tiny_photo_talk',
+        color: 0xc4a35a,
+        talkable: false,
+        status: 'asleep',
+        busyIcon: 'tiny_status_potion_115',
     },
 ];
 

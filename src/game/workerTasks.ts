@@ -12,20 +12,25 @@ const TASK_MIN_MS = 45_000;
 const TASK_MAX_MS = 120_000;
 
 const TASK_LABELS: Record<WorkerId, string[]> = {
-    ops: [
-        'Holding the perimeter',
+    foss: [
+        'Reviewing a pull request',
+        'Patching the toolchain',
+        'Triaging open issues',
+    ],
+    randy: [
+        'Walking the courtyard',
         'Checking the watch rotation',
-        'Locking down the east wing',
+        'Holding the north gate',
     ],
-    research: [
-        'Deep dive on competitors',
-        'Reading last night’s notes',
-        'Chasing a lead in the archives',
-    ],
-    build: [
+    redax: [
         'Shipping HQ polish',
-        'Patching the north wall',
-        'Tuning the workshop bench',
+        'Tuning the workbench',
+        'Fixing the east stall',
+    ],
+    photo: [
+        'Sorting the photo desk',
+        'Cataloguing stills',
+        'Cropping last night’s shots',
     ],
 };
 

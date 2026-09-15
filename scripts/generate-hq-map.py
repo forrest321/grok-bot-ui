@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Author the Tiny Dungeon HQ tilemap (Tiled JSON + TMX).
+"""Author the Tiny Dungeon HQ tilemap (Tiled JSON + TMX) and bot sprites.
 
 Tileset: public/kenney/tiled/tilemap_packed.png (16×16, no spacing).
-GIDs are 1-indexed into that sheet.
+GIDs are 1-indexed into that sheet (Kenney tile N → GID N+1).
 
 Spawn objects on layer `spawns` use pixel coordinates. Characters in HQ.ts
 use origin (0.5, 1), so each point is the feet position (bottom-center of a
@@ -20,10 +20,12 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 TILED = ROOT / "public" / "kenney" / "tiled"
 SHEET = TILED / "tilemap_packed.png"
+CHARS = ROOT / "public" / "kenney" / "characters"
 
 W, H = 32, 24
 TILE = 16
 COLS = 12
+SPRITE = 48
 
 # Tileset GIDs (1-indexed)
 FILL = 1
@@ -39,10 +41,30 @@ PILLAR = 8
 FLOOR = 49
 FLOOR_DOT = 50
 FLOOR_PEBBLE = 43
+CHEST = 55
 CRATE = 64
 ANVIL = 65
-STONE = 66
-TABLE = 67
+TABLE = 73
+STOOL = 74
+
+# Kenney 0-indexed character tiles → 48×48 NEAREST sprites
+# idle, talk (talk may reuse idle when the pack has no pose)
+BOT_TILES = {
+    "cos": (96, 97),
+    "foss": (84, 84),
+    "randy": (87, 87),
+    "redax": (112, 112),
+    "photo": (99, 99),
+}
+PLAYER_TILE = 85
+STALE_SPRITES = (
+    "tiny_ops_idle.png",
+    "tiny_ops_talk.png",
+    "tiny_research_idle.png",
+    "tiny_research_talk.png",
+    "tiny_build_idle.png",
+    "tiny_build_talk.png",
+)
 
 
 def in_bounds(x: int, y: int) -> bool:
@@ -68,21 +90,26 @@ def make_walls() -> list[list[bool]]:
     rect(0, 0, 1, H - 1)
     rect(W - 2, 0, W - 1, H - 1)
 
-    # Ops (NW): south + east stall, open to courtyard
+    # Foss (NW): south + east stall, open to courtyard
     rect(2, 7, 9, 7)  # south
     rect(9, 2, 9, 7)  # east
     punch(7, 7, 9, 7)  # doorway south
 
-    # Research (E): west + north + south, open west
+    # Randy (E): west + north + south, open west
     rect(22, 5, 29, 5)  # north
     rect(22, 14, 29, 14)  # south
     rect(22, 5, 22, 14)  # west
     punch(22, 8, 22, 11)  # doorway west
 
-    # Build (SW): north + east stall, open north
+    # Redax (SW): north + east stall, open north
     rect(2, 16, 11, 16)  # north
     rect(11, 16, 11, 21)  # east
     punch(7, 16, 10, 16)  # doorway north
+
+    # Photo (SE): north + west stall, open west
+    rect(22, 17, 29, 17)  # north
+    rect(22, 17, 22, 21)  # west
+    punch(22, 19, 22, 21)  # doorway west
 
     return wall
 
@@ -136,6 +163,8 @@ def floor_gid(x: int, y: int, wall: list[list[bool]], rng: random.Random) -> int
         return FLOOR_PEBBLE if rng.random() < 0.3 else FLOOR
     if x <= 10 and y >= 17:
         return FLOOR_DOT if rng.random() < 0.35 else FLOOR
+    if x >= 23 and y >= 18:
+        return FLOOR_PEBBLE if rng.random() < 0.3 else FLOOR
     if rng.random() < 0.12:
         return FLOOR_DOT
     if rng.random() < 0.08:
@@ -170,20 +199,22 @@ def build_layers() -> tuple[list[int], list[int], list[int]]:
             raise SystemExit(f"prop on wall or oob: {x},{y}")
         props[y * W + x] = gid
 
-    # Courtyard table near CoS
-    put_prop(18, 11, TABLE)
-    put_prop(19, 11, TABLE)
-    # Ops chest
-    put_prop(3, 3, CRATE)
+    # CoS hub desk (courtyard, between CoS and player)
+    put_prop(16, 14, TABLE)
+    put_prop(17, 14, STOOL)
+    # Foss (NW): storage
+    put_prop(3, 3, CHEST)
     put_prop(4, 3, CRATE)
-    # Research gear
-    put_prop(27, 7, STONE)
-    put_prop(28, 8, STONE)
-    put_prop(24, 12, TABLE)
-    # Build workshop
+    # Randy (E): desk
+    put_prop(27, 7, TABLE)
+    put_prop(28, 7, STOOL)
+    # Redax (SW): workbench
     put_prop(3, 18, CRATE)
-    put_prop(4, 19, CRATE)
     put_prop(8, 20, ANVIL)
+    # Photo (SE): desk
+    put_prop(27, 19, TABLE)
+    put_prop(28, 19, STOOL)
+    put_prop(24, 20, CRATE)
 
     return ground, walls, props
 
@@ -195,11 +226,12 @@ def feet(tx: int, ty: int) -> tuple[int, int]:
 
 def spawns() -> list[dict]:
     points = [
-        ("ops", *feet(5, 5)),
-        ("research", *feet(26, 10)),
-        ("build", *feet(6, 20)),
+        ("foss", *feet(5, 6)),
+        ("randy", *feet(26, 10)),
+        ("redax", *feet(6, 21)),
+        ("photo", *feet(26, 21)),
         ("cos", *feet(16, 12)),
-        ("player", *feet(15, 16)),
+        ("player", *feet(14, 16)),
     ]
     objects = []
     for i, (name, x, y) in enumerate(points, start=1):
@@ -399,6 +431,37 @@ def render_preview(ground: list[int], walls: list[int], props: list[int]) -> Non
     print(f"wrote {preview} {big.size}")
 
 
+def crop_tile(sheet: Image.Image, index: int) -> Image.Image:
+    """Kenney 0-indexed tile from the packed sheet."""
+    row, col = divmod(index, COLS)
+    return sheet.crop((col * TILE, row * TILE, col * TILE + TILE, row * TILE + TILE))
+
+
+def export_sprite(sheet: Image.Image, index: int, dest: Path) -> None:
+    tile = crop_tile(sheet, index)
+    sprite = tile.resize((SPRITE, SPRITE), Image.NEAREST)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    sprite.save(dest)
+    print(f"wrote {dest} tile {index}")
+
+
+def export_characters() -> None:
+    sheet = Image.open(SHEET).convert("RGBA")
+    CHARS.mkdir(parents=True, exist_ok=True)
+
+    for bot_id, (idle, talk) in BOT_TILES.items():
+        export_sprite(sheet, idle, CHARS / f"tiny_{bot_id}_idle.png")
+        export_sprite(sheet, talk, CHARS / f"tiny_{bot_id}_talk.png")
+
+    export_sprite(sheet, PLAYER_TILE, CHARS / "tiny_player.png")
+
+    for name in STALE_SPRITES:
+        path = CHARS / name
+        if path.exists():
+            path.unlink()
+            print(f"removed {path}")
+
+
 def fix_tsx() -> None:
     tsx = TILED / "tiny-dungeon.tsx"
     tsx.write_text(
@@ -418,6 +481,7 @@ def main() -> None:
     write_tmx(ground, walls, props)
     render_preview(ground, walls, props)
     fix_tsx()
+    export_characters()
 
 
 if __name__ == "__main__":
